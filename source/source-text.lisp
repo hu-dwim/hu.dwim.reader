@@ -61,6 +61,7 @@
    ;; ---- ;;
    "*SOURCE-READTABLE*"  "SOURCE-SIGNAL-ERRORS*"
    "SOURCE-READ"
+   "SOURCE-READ-FROM-STRING"
    "SOURCE-OBJECT"
    "SOURCE-OBJECT-FILE"
    "SOURCE-OBJECT-POSITION"
@@ -77,7 +78,14 @@
    "DISPATCH-MACRO-SUB-CHARACTER"
    "COMMENT"
    "COMMENT-TEXT"
+   "SOURCE-FORM"
+   "SOURCE-FORMAT"
+   "SOURCE-FORMAT-STRING"
+   "SOURCE-PRINT"
+   "SOURCE-STRING"
    "SOURCE-SEMICOLON-COMMENT"
+   "SOURCE-WHITESPACE"
+   "SOURCE-WHITESPACE-VALUE"
    "SOURCE-STRING"
    "SOURCE-STRING-VALUE"
    "SOURCE-SUBFORM"
@@ -221,7 +229,11 @@ POST:	(<= start index end)
 ;;; ---------------------------------------- ;;;
 
 (defclass source-object ()
-  ((file     :accessor source-object-file
+  ((parent   :accessor source-object-parent
+             :initarg :parent
+             :initform  nil
+             :type (or null source-object))
+   (file     :accessor source-object-file
              :initarg :file
              :initform  nil
              :type (or null string pathname))
@@ -235,7 +247,11 @@ the source file again, as a character file instead of a sexp file..")
    (text     :accessor source-object-text
              :initarg :text
              :initform nil
-             :type (or null string))))
+             :type (or null string))
+   (form     :accessor source-object-form
+             :initarg :form
+             :initform nil
+             :type t)))
 
 
 (defmethod print-object ((self source-object) stream)
@@ -423,6 +439,26 @@ MACRO-CHARACTER: The macro character that has been read (as passed
 
 ;;; ---------------------------------------- ;;;
 
+(defclass source-whitespace (source-object macro-character-mixin)
+  ((value :accessor source-whitespace-value
+          :initarg :value
+          :initform nil
+          :type (or null string))))
+
+(defun source-reader-macro-whitespace (stream ch)
+  "Source reader #\Space macro reader."
+  (building-reader-macro-source-object
+   stream ch
+   'source-whitespace
+   :value (loop
+             with whitespace = (make-array 4 :element-type 'character :adjustable t :fill-pointer 0)
+             for ch = (peek-char nil stream nil nil t)
+             while (and ch (member ch '(#\Space #\Tab #\Newline) :test #'char=))
+             do (vector-push-extend (read-char stream nil nil t) whitespace)
+             finally (return whitespace))))
+
+;;; ---------------------------------------- ;;;
+
 (defclass source-string (source-object macro-character-mixin)
   ((value :accessor source-string-value
           :initarg :value
@@ -529,8 +565,8 @@ so they can appear even in invalid syntaxes.
    stream ch
    'source-list
    :elements (loop
-                :until (char= #\) (peek-char t stream t nil t))
-                :collect (source-read stream t nil t)
+                :until (char= #\) (peek-char nil stream t nil t))
+                :collect (source-read stream t nil t t)
                 :finally (read-char stream t nil t))))
 
 
@@ -972,6 +1008,9 @@ RETURN: A new readtable where all the reader macros are set to
       (smc
        (#\; source-reader-macro-line-comment     nil)
        (#\" source-reader-macro-string           nil)
+       (#\Space source-reader-macro-whitespace   nil)
+       (#\Tab source-reader-macro-whitespace     nil)
+       (#\Newline source-reader-macro-whitespace nil)
        (#\' source-reader-macro-quote            nil)
        (#\` source-reader-macro-backquote        nil)
        (#\, source-reader-macro-comma            nil)
@@ -1068,8 +1107,7 @@ RETURN: A new readtable where all the reader macros are set to
 (defun map-source-stream (fun source-stream
                           &key (deeply t) (only-atoms nil))
   (loop
-     :for top-level-form = (source-text:source-read source-stream nil
-                                                    source-stream t)
+     :for top-level-form = (source-read source-stream nil source-stream t)
      :until (eq top-level-form source-stream)
      :if deeply
      :do (map-subforms
@@ -1094,6 +1132,143 @@ FUN:    A function (source-object)
   (with-open-file (src source-file :external-format external-format)
     (map-source-stream fun src :deeply deeply :only-atoms only-atoms)))
 
+
+
+
+
+
+
+
+;;;;;;
+;;; Levy's addition
+
+(defun source-read-from-string (&optional text (eof-error-p t) (eof-value nil) (recursive-p nil) (preserve-whitespace-p nil))
+  (with-input-from-string (stream text)
+    (source-text:source-read stream eof-error-p eof-value recursive-p preserve-whitespace-p)))
+
+(defun source-form (instance)
+  "Build the lisp form that would be read by the original lisp reader and set it for each source-object."
+  (%source-form instance))
+
+(defgeneric %source-form (instance)
+  (:method :around (instance)
+    (setf (source-object-form instance) (call-next-method)))
+
+  (:method ((instance source-quote))
+    (list 'quote (%source-form (source-object-subform instance))))
+
+  (:method ((instance source-backquote))
+    (cons 'sb-impl::backq-list (mapcar (lambda (form)
+                                         (if (and (consp form)
+                                                  (eq 'sb-impl::backq-comma (car form)))
+                                             (cdr form)
+                                             (list 'quote form)))
+                                       (%source-form (source-object-subform instance)))))
+
+  (:method ((instance source-unquote))
+    (cons 'sb-impl::backq-comma (%source-form (source-object-subform instance))))
+
+  (:method ((instance source-symbol))
+    (source-symbol-value instance))
+
+  (:method ((instance source-character))
+    (source-character instance))
+
+  (:method ((instance source-number))
+    (source-number-value instance))
+
+  (:method ((instance source-string))
+    (source-string-value instance))
+
+  (:method ((instance source-function))
+    `(function ,(%source-form (source-object-subform instance))))
+
+  (:method ((instance source-sequence))
+    (loop
+       :with index = 0
+       :for element :in (source-sequence-elements instance)
+       :unless (typep element 'source-whitespace)
+       :collect (prog1 (%source-form element)
+                  (incf index)))))
+
+(defun source-print (instance &optional (stream *standard-output*))
+  "Print INSTANCE to STREAM in its original form."
+  (%source-print instance stream))
+
+(defgeneric %source-print (instance stream)
+  (:method ((instance source-object) stream)
+    (write-string (source-object-text instance) stream)
+    (values))
+
+  (:method ((instance source-list) stream)
+    (write-char #\( stream)
+    (dolist (element (source-sequence-elements instance))
+      (%source-print element stream))
+    (write-char #\) stream)
+    (values)))
+
+(defun source-string (instance)
+  "Return a string representing INSTANCE according to SOURCE-PRINT."
+  (with-output-to-string (stream)
+    (source-print instance stream)))
+
+(defvar *format-context*)
+
+(defclass format-context ()
+  ((indent-levels :initarg :indent-levels :accessor source-indent-levels)
+   (indent-width :initarg :indent-width :accessor source-indent-width)))
+
+(defun source-format (instance &key (initial-indent 0) (indent-width 2))
+  (let ((*format-context* (make-instance 'format-context
+                                         :indent-levels (make-hash-table)
+                                         :indent-width indent-width)))
+    (%source-format nil instance initial-indent)))
+
+(defgeneric %source-format (parent instance indent-level)
+  (:method :before (parent instance indent-level)
+    (setf (gethash instance (source-indent-levels *format-context*)) indent-level)
+    (setf (source-object-parent instance) parent))
+
+  (:method (parent (instance source-object) indent-level)
+    instance)
+
+  (:method (parent (instance source-whitespace) indent-level)
+    (let ((text (source-object-text instance))
+          (parent (source-object-parent instance)))
+      (when (and parent (find #\Newline text :test #'char=))
+        (setf (slot-value instance 'text)
+              (concatenate 'string
+                           (string-right-trim '(#\Space #\Tab) text)
+                           (make-string (+ (gethash parent (source-indent-levels *format-context*))
+                                           (source-indent-width *format-context*))
+                                        :initial-element #\Space)))))
+    instance)
+
+  (:method (parent (instance source-list) indent-level)
+    (loop
+       :with indent-level = (1+ indent-level)
+       :for element :in (source-sequence-elements instance)
+       :do (progn
+             (%source-format instance element indent-level)
+             (let* ((text (source-object-text element))
+                    (text-length (length text)))
+               (if (typep element 'source-whitespace)
+                   (let* ((text (source-object-text element))
+                          (newline-position (position #\Newline text :test #'char= :from-end t)))
+                     (if newline-position
+                         (setf indent-level (- text-length newline-position 1))
+                         (incf indent-level text-length)))
+                   (incf indent-level text-length)))))
+    instance))
+
+(defun source-format-string (text)
+  (with-output-to-string (output)
+    (with-input-from-string (input text)
+      (loop
+        :for element = (source-read input nil input nil t)
+        :until (eq element input)
+        :do (write-string (source-string (source-format element)) output)
+        :until (typep element 'source-text:source-lexical-error)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

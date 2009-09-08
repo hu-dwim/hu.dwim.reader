@@ -20,4 +20,4 @@
                              (:file "source-form")
                              (:file "source-text" :depends-on ("reader"))))
                (:module "integration"
-                :components ((:file "hu.dwim.reader+sbcl")))))
+                :components (#+sbcl (:file "sbcl")))))

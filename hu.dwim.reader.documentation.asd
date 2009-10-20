@@ -10,12 +10,13 @@
 
 (defsystem :hu.dwim.reader.documentation
   :class hu.dwim.documentation-system
-  :author ("Attila Lendvai <attila.lendvai@gmail.com>"
-           "Levente Mészáros <levente.meszaros@gmail.com>"
+  :author ("Levente Mészáros <levente.meszaros@gmail.com>"
+           "Attila Lendvai <attila.lendvai@gmail.com>"
            "Tamás Borbély <tomi.borbely@gmail.com>")
   :licence "BSD / Public domain"
   :description "Documentation for hu.dwim.reader"
   :depends-on (:hu.dwim.reader.test
                :hu.dwim.wui)
   :components ((:module "documentation"
-                :components ((:file "package")))))
+                :components ((:file "reader" :depends-on ("package"))
+                             (:file "package")))))

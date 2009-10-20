@@ -7,7 +7,10 @@
 (in-package :common-lisp-user)
 
 (defpackage :hu.dwim.reader.documentation
-  (:use :hu.dwim.common-lisp
+  (:use :hu.dwim.asdf
+        :hu.dwim.common-lisp
         :hu.dwim.def
-        :hu.dwim.reader.test
+        :hu.dwim.defclass-star
+        :hu.dwim.syntax-sugar
+        :hu.dwim.util
         :hu.dwim.wui))

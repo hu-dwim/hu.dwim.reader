@@ -14,7 +14,8 @@
            "Tamás Borbély <tomi.borbely@gmail.com>"
            "Levente Mészáros <levente.meszaros@gmail.com>")
   :licence "BSD / Public domain"
-  :depends-on (:hu.dwim.reader
+  :depends-on (:hu.dwim.def+contextl
+               :hu.dwim.reader
                :hu.dwim.walker)
   :components ((:module "integration"
                 :components ((:file "walker")))))

@@ -4,9 +4,10 @@
 ;;;
 ;;; See LICENCE for details.
 
-(in-package :common-lisp-user)
+(in-package :hu.dwim.util)
 
-(defpackage :hu.dwim.reader.test
+(def package :hu.dwim.reader.test
   (:use :hu.dwim.common
         :hu.dwim.def
-        :hu.dwim.stefil))
+        :hu.dwim.stefil)
+  (:readtable-setup (enable-standard-hu.dwim-syntaxes)))

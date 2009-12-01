@@ -10,10 +10,6 @@
 
 (defsystem :hu.dwim.reader+hu.dwim.syntax-sugar
   :class hu.dwim.system
-  :author ("Attila Lendvai <attila.lendvai@gmail.com>"
-           "Tamás Borbély <tomi.borbely@gmail.com>"
-           "Levente Mészáros <levente.meszaros@gmail.com>")
-  :licence "BSD / Public domain"
   :depends-on (:hu.dwim.reader
                :hu.dwim.syntax-sugar)
   :components ((:module "integration"

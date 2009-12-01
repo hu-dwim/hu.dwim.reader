@@ -10,11 +10,7 @@
 
 (defsystem :hu.dwim.reader
   :class hu.dwim.system
-  :author ("Attila Lendvai <attila.lendvai@gmail.com>"
-           "Levente Mészáros <levente.meszaros@gmail.com>"
-           "Tamás Borbély <tomi.borbely@gmail.com>")
-  :licence "BSD / Public domain"
-  :description "Template for hu.dwim.reader"
+  :description "Whitespace preserving Common Lisp reader."
   :components ((:module "source"
                 :components ((:file "reader" :depends-on ("source-form"))
                              (:file "source-form")

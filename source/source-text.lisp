@@ -241,7 +241,7 @@ POST:	(<= start index end)
              :initarg :position
              :initform nil
              :type (or null integer)
-             :documentation "This are file-positions. 
+             :documentation "This are file-positions.
 We don't keep track of line/column, since this can be done by reading
 the source file again, as a character file instead of a sexp file..")
    (text     :accessor source-object-text
@@ -265,9 +265,9 @@ the source file again, as a character file instead of a sexp file..")
 
 (defun read-string-between-file-positions (stream start end)
   "
-PRE:    (eq 'character (stream-element-type stream)) 
+PRE:    (eq 'character (stream-element-type stream))
         and START and END are file positions of this STREAM.
-RETURN: A string containing the characters read between the START 
+RETURN: A string containing the characters read between the START
         and END file positions in the STREAM.
 POST:   (= end (file-position stream))
 "
@@ -330,12 +330,12 @@ RETURN:  A new source-object instance of class CLASS, or an instance
 (defmacro building-source-object (stream start class
                                   &rest args &key &allow-other-keys)
   "
-USAGE: (building-source-object stream *start* 
-              'source-object-class 
+USAGE: (building-source-object stream *start*
+              'source-object-class
               :attribute (source-read stream t nil t)
               :other-attribute (read-line stream t nil t) #| ... |#)
 RETURN: the source-object-class instance build.
-DO:     Keep track of the file position to seek back and read again the 
+DO:     Keep track of the file position to seek back and read again the
         source, for the text attribute of the instance.
 "
   `(read-source-object ,stream ,start ,class (lambda () (list ,@args))))
@@ -434,7 +434,7 @@ MACRO-CHARACTER: The macro character that has been read (as passed
   "Source reader ; macro reader."
   (building-reader-macro-source-object
    stream ch
-   'source-semicolon-comment 
+   'source-semicolon-comment
    :comment (read-line stream nil "")))
 
 ;;; ---------------------------------------- ;;;
@@ -469,7 +469,7 @@ MACRO-CHARACTER: The macro character that has been read (as passed
   "Source reader \" macro reader."
   (building-reader-macro-source-object
    stream delim
-   'source-string  
+   'source-string
    :value (flet ((error-eof ()
                    (com.informatimago.common-lisp.reader::serror
                     'simple-end-of-file stream
@@ -511,7 +511,7 @@ MACRO-CHARACTER: The macro character that has been read (as passed
   "Source reader ' macro reader."
   (building-reader-macro-source-object
    stream ch
-   'source-quote 
+   'source-quote
    :subform (source-read stream t nil t)))
 
 
@@ -552,7 +552,7 @@ MACRO-CHARACTER: The macro character that has been read (as passed
              :type     sequence
              :documentation "
 Works for conses, lists, and invalid stuff put in parentheses, like ( . . )
-Dots are represented by a source-object, 
+Dots are represented by a source-object,
 so they can appear even in invalid syntaxes.
 ")))
 
@@ -576,7 +576,7 @@ so they can appear even in invalid syntaxes.
   ;; Actually exits thru the error handler...
   (building-reader-macro-source-object
    stream ch
-   'source-lexical-error  
+   'source-lexical-error
    :error (com.informatimago.common-lisp.reader::serror
            'simple-reader-error stream
            "an object cannot start with ~C" ch)))
@@ -590,13 +590,13 @@ so they can appear even in invalid syntaxes.
   "
 PRE:   MACRO-CHARACTER is a reader dispatch macro character.
 POST:  The dispatching reader macro function for the MACRO-CHARACTER
-       is replaced by a function that encapsulates the original 
+       is replaced by a function that encapsulates the original
        dispatching reader macro function, in a binding to *START*
        of the file position of the MACRO-CHARACTER.
 "
   (multiple-value-bind (dispatch non-terminating-p)
       (get-macro-character macro-character readtable)
-    (set-macro-character macro-character 
+    (set-macro-character macro-character
                          (lambda (stream macro-character)
                            (unread-char macro-character stream)
                            (let ((*start* (file-position stream))
@@ -650,7 +650,7 @@ POST:  The dispatching reader macro function for the MACRO-CHARACTER
   "Source reader #= dispatch macro reader."
   (building-reader-dispatch-macro-source-object
    stream arg sub-char
-   'source-label-definition 
+   'source-label-definition
    :label (or arg
               (com.informatimago.common-lisp.reader::serror
                'simple-reader-error stream
@@ -678,7 +678,7 @@ POST:  The dispatching reader macro function for the MACRO-CHARACTER
   "Source reader #- dispatch macro reader."
   (building-reader-dispatch-macro-source-object
    stream arg sub-char
-   'source-not-feature 
+   'source-not-feature
    :subform (let ((*package*  (find-package "KEYWORD"))
                   (*read-suppress* nil))
               (source-read stream t nil t))))
@@ -692,7 +692,7 @@ POST:  The dispatching reader macro function for the MACRO-CHARACTER
   "Source reader #. dispatch macro reader."
   (building-reader-dispatch-macro-source-object
    stream arg sub-char
-   'source-read-eval 
+   'source-read-eval
    :subform (source-read stream t nil t)))
 
 
@@ -711,7 +711,7 @@ POST:  The dispatching reader macro function for the MACRO-CHARACTER
   "Source reader #: dispatch macro reader."
   (building-reader-dispatch-macro-source-object
    stream arg sub-char
-   'source-token 
+   'source-token
    :token (multiple-value-bind (tokenp token)
               (com.informatimago.common-lisp.reader::read-token
                stream t nil t nil nil *readtable*)
@@ -732,7 +732,7 @@ POST:  The dispatching reader macro function for the MACRO-CHARACTER
   "Source reader #< dispatch macro reader."
   (building-reader-dispatch-macro-source-object
    stream arg sub-char
-   'source-token 
+   'source-token
    :token "<unreadable>"))
 
 
@@ -747,7 +747,7 @@ POST:  The dispatching reader macro function for the MACRO-CHARACTER
   ;; contain any characters whatsoever.
   (building-reader-dispatch-macro-source-object
    stream arg sub-char
-   'source-token 
+   'source-token
    :comment
    (loop
       :with comment = (make-array 0
@@ -782,7 +782,7 @@ POST:  The dispatching reader macro function for the MACRO-CHARACTER
   "Source reader #' dispatch macro reader."
   (building-reader-dispatch-macro-source-object
    stream arg sub-char
-   'source-function 
+   'source-function
    :subform (source-read stream t nil t)))
 
 
@@ -819,19 +819,19 @@ POST:  The dispatching reader macro function for the MACRO-CHARACTER
 URL: http://www.lispworks.com/documentation/HyperSpec/Body/02_dhd.htm
 "
   ;; Syntax: #*<<bits>>
-  ;; 
+  ;;
   ;; A simple bit vector is constructed containing the indicated bits (0's
   ;; and 1's), where the leftmost bit has index zero and the subsequent
   ;; bits have increasing indices.
-  ;; 
+  ;;
   ;; Syntax: #<<n>>*<<bits>>
-  ;; 
+  ;;
   ;; With an argument n, the vector to be created is of length n. If the
   ;; number of bits is less than n but greater than zero, the last bit is
   ;; used to fill all remaining bits of the bit vector.
-  ;; 
+  ;;
   ;; The notations #* and #0* each denote an empty bit vector.
-  ;; 
+  ;;
   ;; Regardless of whether the optional numeric argument n is provided, the
   ;; token that follows the asterisk is delimited by a normal token
   ;; delimiter. However, (unless the  value of *read-suppress* is true) an
@@ -1065,11 +1065,11 @@ RETURN: A new readtable where all the reader macros are set to
 (defun source-read (&optional input-stream
                     (eof-error-p t) (eof-value nil)
                     (recursive-p nil) (preserve-whitespace-p nil))
-  (let ((*read-suppress* nil)           ; we do want the source! 
+  (let ((*read-suppress* nil)           ; we do want the source!
         (*readtable* *source-readtable*)
         (*stream* input-stream)
         (*file*  (ignore-errors (pathname input-stream))))
-    (unless preserve-whitespace-p 
+    (unless preserve-whitespace-p
       (peek-char t input-stream nil nil t))
     (let ((*start* (file-position input-stream)))
       ;; (read input-stream eof-error-p eof-value recursive-p)
@@ -1120,13 +1120,13 @@ RETURN: A new readtable where all the reader macros are set to
            (funcall fun top-level-form))))
 
 
-(defun map-source-file (fun source-file  
+(defun map-source-file (fun source-file
                         &key (deeply t) (only-atoms nil)
                         (external-format :default))
   "
-FUN:    A function (source-object) 
+FUN:    A function (source-object)
         source-object:  An instance of source-object parsed from a source file.
-        When atoms is true, FUN is called only on source-objects not 
+        When atoms is true, FUN is called only on source-objects not
         representing cons cells (lists).
 "
   (with-open-file (src source-file :external-format external-format)
@@ -1167,6 +1167,9 @@ FUN:    A function (source-object)
 
   (:method ((instance source-unquote))
     (cons 'sb-impl::backq-comma (%source-form (source-object-subform instance))))
+
+  (:method ((instance source-read-eval))
+    (eval (%source-form (source-object-subform instance))))
 
   (:method ((instance source-symbol))
     (source-symbol-value instance))
@@ -1212,54 +1215,56 @@ FUN:    A function (source-object)
   (with-output-to-string (stream)
     (source-print instance stream)))
 
-(defvar *format-context*)
+(defun source-format (source &key (default-indent 2) (normalize-whitespace t) (insert-newlines t))
+  (labels ((recurse (parent-source source indent)
+             (setf (source-object-parent source) parent-source)
+             (loop
+               :with prefix-indent = 1
+               :with subform-indent = (+ indent prefix-indent)
+               :with subform-index = 0
+               :for element-cell :on (typecase source
+                                       (source-sequence (source-sequence-elements source))
+                                       (source-subform (list (source-object-subform source))))
+               :for element = (car element-cell)
+               :do (let* ((text (source-object-text element))
+                          (text-length (length text)))
+                     (if (typep element 'source-whitespace)
+                         (let* ((source-form (source-object-form source))
+                                (next-source (find-if-not (lambda (next-source) (typep next-source 'source-whitespace)) element-cell))
+                                (next-form (when next-source (source-object-form next-source)))
+                                (insert-newline? (or (position #\Newline text :test #'char= :from-end t)
+                                                     (and insert-newlines
+                                                          (source-insert-newline source-form source next-form next-source subform-index)))))
+                           (if insert-newline?
+                               (let* ((indent-length (+ indent
+                                                        (or (source-parent-relative-indent source-form source next-form next-source subform-index)
+                                                            default-indent)))
+                                      (original-newlines (string-right-trim '(#\Space #\Tab) text))
+                                      (text (concatenate 'string
+                                                         (if (or normalize-whitespace
+                                                                 (zerop (length original-newlines)))
+                                                             #.(coerce '(#\Newline) 'simple-string)
+                                                             original-newlines)
+                                                         (make-string indent-length :initial-element #\Space))))
+                                 (setf (slot-value element 'text) text
+                                       subform-indent indent-length))
+                               (if normalize-whitespace
+                                   (setf (slot-value element 'text) " ")
+                                   (incf subform-indent text-length))))
+                         (progn
+                           (recurse source element subform-indent)
+                           (incf subform-index)
+                           (incf subform-indent text-length)))))))
+    (recurse nil source 0)
+    source))
 
-(defclass format-context ()
-  ((indent-levels :initarg :indent-levels :accessor source-indent-levels)
-   (indent-width :initarg :indent-width :accessor source-indent-width)))
+(defgeneric source-parent-relative-indent (parent-form parent-source form source form-index)
+  (:method (parent-form parent-source form source form-index)
+    nil))
 
-(defun source-format (instance &key (initial-indent 0) (indent-width 2))
-  (let ((*format-context* (make-instance 'format-context
-                                         :indent-levels (make-hash-table)
-                                         :indent-width indent-width)))
-    (%source-format nil instance initial-indent)))
-
-(defgeneric %source-format (parent instance indent-level)
-  (:method :before (parent instance indent-level)
-    (setf (gethash instance (source-indent-levels *format-context*)) indent-level)
-    (setf (source-object-parent instance) parent))
-
-  (:method (parent (instance source-object) indent-level)
-    instance)
-
-  (:method (parent (instance source-whitespace) indent-level)
-    (let ((text (source-object-text instance))
-          (parent (source-object-parent instance)))
-      (when (and parent (find #\Newline text :test #'char=))
-        (setf (slot-value instance 'text)
-              (concatenate 'string
-                           (string-right-trim '(#\Space #\Tab) text)
-                           (make-string (+ (gethash parent (source-indent-levels *format-context*))
-                                           (source-indent-width *format-context*))
-                                        :initial-element #\Space)))))
-    instance)
-
-  (:method (parent (instance source-list) indent-level)
-    (loop
-       :with indent-level = (1+ indent-level)
-       :for element :in (source-sequence-elements instance)
-       :do (progn
-             (%source-format instance element indent-level)
-             (let* ((text (source-object-text element))
-                    (text-length (length text)))
-               (if (typep element 'source-whitespace)
-                   (let* ((text (source-object-text element))
-                          (newline-position (position #\Newline text :test #'char= :from-end t)))
-                     (if newline-position
-                         (setf indent-level (- text-length newline-position 1))
-                         (incf indent-level text-length)))
-                   (incf indent-level text-length)))))
-    instance))
+(defgeneric source-insert-newline (parent-form parent-source form source form-index)
+  (:method (parent-form parent-source form source form-index)
+    nil))
 
 (defun source-format-string (text)
   (with-output-to-string (output)
@@ -1276,7 +1281,7 @@ FUN:    A function (source-object)
 
 
 ;;; To be tested:
-;;; 
+;;;
 ;;; '(#1=#2=#3=#4=a #2# #3# #4#)
 
 #- (and)
@@ -1314,7 +1319,7 @@ FUN:    A function (source-object)
 #- (and)
 (with-input-from-string (src "  ")
   (com.informatimago.common-lisp.source-text:source-read src nil :eof))
- 
+
 #- (and)
 (defparameter *some*
   (with-open-file (src "source-text.lisp")
@@ -1344,12 +1349,12 @@ FUN:    A function (source-object)
 ;; (with-input-from-string (src "(a (b c #(1 2 3) (e f) g) h) (1 2 3)")
 ;;   (let ((*print-readably* t))
 ;;     (map-source-stream (lambda (x) (terpri) (prin1 x))  src)))
-;; 
+;;
 ;; (with-input-from-string (src "(a (b c (1 2 3) (e f) g) h) (1 2 3)")
 ;;   (let ((*print-readably* t))
 ;;     (map-source-stream (lambda (x) (terpri) (prin1 x))  src
 ;;                        :deeply t :only-atoms nil)))
-;; 
+;;
 ;; (with-input-from-string (src "(a (b c #(1 2 3) (e f) g) h) (1 2 3)")
 ;;   (map-source-stream (lambda (x)
 ;;                        (terpri)

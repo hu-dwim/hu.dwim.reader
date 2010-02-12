@@ -21,4 +21,15 @@
                                        (lambda (&rest args)
                                          (declare (ignore args))
                                          (building-source-object *stream* *start* 'source-boolean :value nil))
-                                       readtable))
+                                       readtable)
+  readtable)
+
+(defmethod %source-form ((instance source-boolean))
+  (source-boolean-value instance))
+
+;; TODO: depends on walker
+#+nil
+(defmethod describe-source-form ((form constant-form) (instance source-boolean))
+  (if (source-boolean-value instance)
+      "boolean constant true"
+      "boolean constant false"))

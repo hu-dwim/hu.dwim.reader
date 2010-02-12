@@ -9,5 +9,6 @@
 (def package :hu.dwim.reader.test
   (:use :hu.dwim.common
         :hu.dwim.def
-        :hu.dwim.stefil)
+        :hu.dwim.stefil
+        :hu.dwim.util)
   (:readtable-setup (enable-standard-hu.dwim-syntaxes)))

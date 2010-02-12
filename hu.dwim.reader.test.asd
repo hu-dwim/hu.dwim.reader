@@ -11,7 +11,8 @@
 (defsystem :hu.dwim.reader.test
   :class hu.dwim.test-system
   :depends-on (:hu.dwim.reader
-               :hu.dwim.stefil+hu.dwim.def+swank)
+               :hu.dwim.stefil+hu.dwim.def+swank
+               :hu.dwim.util)
   :components ((:module "test"
                 :components ((:file "package")
                              (:file "suite" :depends-on ("package"))))))

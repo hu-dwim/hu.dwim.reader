@@ -26,18 +26,13 @@
             hu.dwim.walker:let*-form
             hu.dwim.walker:if-form)))
 
-(def layered-methods find-walker-handler
-  (:method ((instance source-quote))
-    (find-walker-handler (source-object-form instance)))
-  (:method ((instance source-list))
-    (find-walker-handler (source-object-form instance)))
-  (:method ((instance source-symbol))
-    (find-walker-handler (source-symbol-value instance)))
-  (:method ((instance source-number))
-    (find-walker-handler (source-number-value instance)))
-  (:method :around ((instance source-object))
-    (lambda (&rest args)
-      (setf (source-object-form instance) (apply (call-next-method) args)))))
+#+nil
+(def layer source-walker ()
+  ())
+
+(def layered-method hu.dwim.walker::walk-form :around ((instance source-object) &key parent environment)
+  (setf (source-object-form instance)
+        (contextl:call-next-layered-method (source-object-form instance) :parent parent :environment environment)))
 
 (def layered-methods coerce-to-form
   (:method ((instance source-symbol))

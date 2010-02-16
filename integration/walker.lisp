@@ -7,7 +7,8 @@
 (in-package "COM.INFORMATIMAGO.COMMON-LISP.SOURCE-TEXT")
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (import '(hu.dwim.def:def
+  (import '(metabang-bind:bind
+            hu.dwim.def:def
             hu.dwim.def:generic
             hu.dwim.def:layered-method
             hu.dwim.def:layered-methods
@@ -24,13 +25,16 @@
             hu.dwim.walker:free-variable-reference-form
             hu.dwim.walker:let-form
             hu.dwim.walker:let*-form
-            hu.dwim.walker:if-form)))
+            hu.dwim.walker:if-form
+            hu.dwim.walker::operator-of
+            hu.dwim.walker::walk-form
+            hu.dwim.walker::walker-macroexpand-1)))
 
 #+nil
 (def layer source-walker ()
   ())
 
-(def layered-method hu.dwim.walker::walk-form :around ((instance source-object) &key parent environment)
+(def layered-method walk-form :around ((instance source-object) &key parent environment)
   (setf (source-object-form instance)
         (contextl:call-next-layered-method (source-object-form instance) :parent parent :environment environment)))
 
@@ -45,6 +49,29 @@
     (remove-if (lambda (element)
                  (typep element 'source-whitespace))
                (source-sequence-elements instance))))
+
+(def layered-method walker-macroexpand-1 (form &optional env)
+  ;; TODO: move to reader+walker
+  (bind ((macro-name (coerce-to-form (first form))))
+    (if (member macro-name '(when unless)) ;; TODO: other macros interface to define such macro names
+        (macroexpand-1 (cons macro-name (cdr form)) env)
+        (bind ((ht (make-hash-table))
+               (coerced-form (labels ((recurse (form)
+                                        (bind ((coerced-form (coerce-to-form form))
+                                               (result-form (if (consp coerced-form)
+                                                                (cons (recurse (car coerced-form)) (recurse (cdr coerced-form)))
+                                                                coerced-form)))
+                                          (setf (gethash result-form ht) form)
+                                          result-form)))
+                               (recurse form))))
+          (labels ((recurse (form)
+                     (bind ((original-form (gethash form ht)))
+                       (or original-form
+                           (if (consp form)
+                               (cons (recurse (car form)) (recurse (cdr form)))
+                               form)))))
+            (bind (((:values expansion expanded?) (macroexpand-1 coerced-form env)))
+              (values (recurse expansion) expanded?)))))))
 
 (def function source-walk (source)
   (source-form source)
@@ -80,7 +107,7 @@
     (format nil "whitespace ~S" (source-object-text source)))
 
   (:method ((form free-application-form) source)
-    (format nil "function call to ~A" (source-object-form (hu.dwim.walker::operator-of form))))
+    (format nil "function call to ~A" (source-object-form (operator-of form))))
 
   (:method ((form lambda-function-form) source)
     "lambda function definition")
@@ -129,7 +156,7 @@
     "parameter list"))
 
 (def function source-describe-position (source position)
-  (let ((result ()))
+  (bind ((result ()))
     (map-subforms (lambda (ast)
                     (let* ((start (source-object-position ast))
                            (end (1- (+ start (length (source-object-text ast))))))
@@ -138,7 +165,7 @@
                                              :start start
                                              :end end
                                              :source ast
-                                             :description (let ((*package* (find-package :keyword)))
+                                             :description (bind ((*package* (find-package :keyword)))
                                                             (source-describe-form (source-object-form ast) ast)))
                               result))))
                   source)
@@ -164,7 +191,7 @@
     (3 4)))
 
 (def method source-parent-relative-indent ((parent-form free-application-form) (parent-source source-list) form source form-index)
-  (+ 2 (length (symbol-name (source-symbol-value (hu.dwim.walker::operator-of parent-form))))))
+  (+ 2 (length (symbol-name (source-symbol-value (operator-of parent-form))))))
 
 (def method source-insert-newline ((parent-form if-form) (parent-source source-list) form source form-index)
   (when (<= 2 form-index)
@@ -180,5 +207,5 @@
 
 (def method source-insert-newline ((parent-form free-application-form) (parent-source source-list) (form constant-form) (source source-symbol) form-index)
   (when (and (keywordp (source-symbol-value source))
-             (eq (source-object-form (hu.dwim.walker::operator-of parent-form)) 'make-instance))
+             (eq (source-object-form (operator-of parent-form)) 'make-instance))
     t))

@@ -11,7 +11,7 @@
 (defsystem :hu.dwim.reader.documentation
   :class hu.dwim.documentation-system
   :depends-on (:hu.dwim.reader.test
-               :hu.dwim.wui)
+               :hu.dwim.presentation)
   :components ((:module "documentation"
                 :components ((:file "reader" :depends-on ("package"))
                              (:file "package")))))

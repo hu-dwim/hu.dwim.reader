@@ -1157,17 +1157,6 @@ FUN:    A function (source-object)
   (:method ((instance source-quote))
     (list 'quote (%source-form (source-object-subform instance))))
 
-  (:method ((instance source-backquote))
-    (cons 'sb-impl::backq-list (mapcar (lambda (form)
-                                         (if (and (consp form)
-                                                  (eq 'sb-impl::backq-comma (car form)))
-                                             (cdr form)
-                                             (list 'quote form)))
-                                       (%source-form (source-object-subform instance)))))
-
-  (:method ((instance source-unquote))
-    (cons 'sb-impl::backq-comma (%source-form (source-object-subform instance))))
-
   (:method ((instance source-read-eval))
     (eval (%source-form (source-object-subform instance))))
 

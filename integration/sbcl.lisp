@@ -10,7 +10,7 @@
   (reader:set-dispatch-macro-character #\# #\!
                                        (lambda (s c n)
                                          (declare (ignore n))
-                                         (swank-backend::shebang-reader s c nil))
+                                         (swank/sbcl::shebang-reader s c nil))
                                        readtable))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)

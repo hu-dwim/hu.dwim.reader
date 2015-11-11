@@ -51,7 +51,6 @@
                (source-sequence-elements instance))))
 
 (def layered-method walker-macroexpand-1 (form &optional env)
-  ;; TODO: move to reader+walker
   (bind ((macro-name (coerce-to-form (first form))))
     (if (member macro-name '(when unless)) ;; TODO: other macros interface to define such macro names
         (macroexpand-1 (cons macro-name (cdr form)) env)

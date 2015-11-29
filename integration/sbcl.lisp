@@ -6,13 +6,6 @@
 
 (in-package "COM.INFORMATIMAGO.COMMON-LISP.SOURCE-TEXT")
 
-(defun enable-shebang-syntax (&optional (readtable source-text:*source-readtable*))
-  (reader:set-dispatch-macro-character #\# #\!
-                                       (lambda (s c n)
-                                         (declare (ignore n))
-                                         (swank/sbcl::shebang-reader s c nil))
-                                       readtable))
-
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun sbcl-version>= (&rest args)
     (if (sb-impl::version>= (sb-impl::split-version-string (lisp-implementation-version))

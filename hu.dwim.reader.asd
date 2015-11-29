@@ -11,16 +11,7 @@
   :components ((:module "source"
                 :components ((:file "reader" :depends-on ("source-form"))
                              (:file "source-form")
-                             (:file "source-text" :depends-on ("reader"))))))
-#+sbcl
-(defsystem :hu.dwim.reader+sbcl
-  :defsystem-depends-on (:hu.dwim.asdf)
-  :class "hu.dwim.asdf:hu.dwim.system"
-  :depends-on (:hu.dwim.reader
-               :swank)
-  :components ((:module "integration"
-                :components ((:file "sbcl")))))
-
-#+sbcl
-(defmethod perform :after ((operation load-op) (system (eql (find-system :hu.dwim.reader))))
-  (load-system :hu.dwim.reader+sbcl))
+                             (:file "source-text" :depends-on ("reader"))))
+               (:module "integration"
+                :depends-on ("source")
+                :components ((:file "sbcl" :if-feature :sbcl)))))

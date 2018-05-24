@@ -7,10 +7,18 @@
 (in-package "COM.INFORMATIMAGO.COMMON-LISP.SOURCE-TEXT")
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun sbcl-version>= (&rest args)
-    (if (sb-impl::version>= (sb-impl::split-version-string (lisp-implementation-version))
-                            args)
+  (defun if-symbol-exists (package name)
+    "Can be used to conditionalize at read-time like this: #+#.(hu.dwim.util:if-symbol-exists \"PKG\" \"FOO\")(pkg::foo ...)"
+    (if (and (find-package (string package))
+             (find-symbol (string name) (string package)))
         '(:and)
+        '(:or))))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun sbcl-version>= (&rest subversions)
+    (declare (ignorable subversions))
+    (or #+#.(source-text::if-symbol-exists '#:sb-ext '#:assert-version->=)
+        (values (ignore-errors (apply #'sb-ext:assert-version->= subversions) '(:and)))
         '(:or))))
 
 ;; FTR, the incompatible change that was released with 1.2.2:
